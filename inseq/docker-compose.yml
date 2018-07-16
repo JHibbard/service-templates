@@ -1,0 +1,96 @@
+version: "3.5"
+services:
+  db:
+    image: postgres:latest
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 1000M
+      restart_policy:
+        condition: on-failure
+    configs:
+      - source: db_config
+        target: /docker-entrypoint-initdb.d/dinit-user-db.sh
+      - source: inseq_db_config
+        target: /docker-entrypoint-initdb.d/dinit-inseq-db.sh
+    networks:
+      - "inseq_net"
+  scheduler:
+    image: luigid
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 500M
+      restart_policy:
+        condition: on-failure
+    configs:
+      - source: scheduler_config
+        target: /etc/luigi/client.cfg
+    ports:
+      - target: 8082
+        published: 8082
+        protocol: tcp
+        mode: host
+    networks:
+      - "inseq_net"
+    depends_on:
+      - "db"
+    command: ["./wait-for-it.sh", "db:5432", "-s", "-t", "10", "--", "luigid"]
+  worker:
+    image: inseq-api:0.43
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    configs:
+      - source: scheduler_config
+        target: /etc/luigi/client.cfg
+    networks:
+      - "inseq_net"
+      - "sc_bridge"
+      - "jupyterhub-network"
+    depends_on:
+      - scheduler
+    ports:
+      - target: 5000
+        published: 5001
+        protocol: tcp
+        mode: host
+    environment:
+      - INSEQ_CONFIG_FILE=shu_dev.py
+      - DB_USER=inseq
+      - DB_PASS=
+      - SECRET_KEY=
+      - HELENS_KEY=
+      - PORT=5001
+    volumes:
+      - inseq-files:/tmp
+      - helens-users:/users
+      - /var/run/docker.sock:/var/run/docker.sock
+networks:
+  inseq_net:
+    attachable: true
+  sc_bridge:
+    external:
+      name: "bridge"
+  jupyterhub-network:
+    external: true
+configs:
+  scheduler_config:
+    external: true
+  db_config:
+    external: true
+  inseq_db_config:
+    external: true
+volumes:
+  inseq-files:
+  helens:
+    external: true
+  helens-user-jhibba:
+    external: true
+  helens-users:
+    external: true

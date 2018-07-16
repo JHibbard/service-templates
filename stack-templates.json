@@ -1,0 +1,43 @@
+[
+  {
+    "type": "stack",
+    "title": "Inseq Stack",
+    "name": "inseq",
+    "description": "Genomics workflows made easy",
+    "note": "Deploys the API gateway and sample pipelines",
+    "categories": ["genomics"],
+    "platform": "linux",
+    "logo": "https://portainer.io/images/logos/openfaas.png",
+    "repository": {
+      "url": "https://github.com/JHibbard/service-templates",
+      "stackfile": "inseq/docker-compose.yml"
+    }
+  },
+  {
+    "type": "stack",
+    "title": "Luigi Scheduler",
+    "name": "luigi",
+    "description": "Luigi workflow and task scheduler",
+    "note": "Deploys Luigi scheduler and history database",
+    "categories": ["scheduler"],
+    "platform": "linux",
+    "logo": "https://portainer.io/images/logos/openfaas.png",
+    "repository": {
+      "url": "https://github.com/JHibbard/service-templates",
+      "stackfile": "luigi/docker-compose.yml"
+    }
+  },
+  {
+    "type": "container",
+    "title": "Registry",
+    "description": "Docker image registry",
+    "categories": ["docker"],
+    "platform": "linux",
+    "logo": "https://portainer.io/images/logos/registry.png",
+    "image": "registry:latest",
+    "ports": [
+      "5000/tcp"
+    ],
+    "volumes": ["/var/lib/registry"]
+  }
+]

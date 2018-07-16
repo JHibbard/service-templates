@@ -1,0 +1,52 @@
+version: "3.4"
+services:
+  db:
+    image: postgres:latest
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 1000M
+      restart_policy:
+        condition: on-failure
+    configs:
+      - source: db_config
+        target: /docker-entrypoint-initdb.d/dinit-user-db.sh
+      - source: inseq_db_config
+        target: /docker-entrypoint-initdb.d/dinit-inseq-db.sh
+    networks:
+      - "luigi_net"
+  scheduler:
+    image: luigid:v5
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 500M
+      restart_policy:
+        condition: on-failure
+    configs:
+      - source: scheduler_config
+        target: /etc/luigi/client.cfg
+    ports:
+      - target: 8082
+        published: 8082
+        protocol: tcp
+        mode: host
+    networks:
+      - "luigi_net"
+    depends_on:
+      - "db"
+    command: ["luigid"]
+networks:
+  luigi_net:
+    attachable: true
+configs:
+  scheduler_config:
+    external: true
+  db_config:
+    external: true
+  inseq_db_config:
+    external: true
